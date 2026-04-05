@@ -14,13 +14,12 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[colorScheme ?? 'dark'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
           },
           default: {},
@@ -29,15 +28,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Library',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="music.note.list" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="search"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Search',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="magnifyingglass" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="queue"
+        options={{
+          title: 'Queue',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="list.bullet" color={color} />
+          ),
         }}
       />
     </Tabs>

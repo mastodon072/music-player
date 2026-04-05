@@ -1,75 +1,80 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-export default function HomeScreen() {
+const LIBRARY_SECTIONS = [
+  { title: 'Songs', data: ['All Songs'] },
+  { title: 'Albums', data: ['All Albums'] },
+  { title: 'Artists', data: ['All Artists'] },
+  { title: 'Playlists', data: ['All Playlists'] },
+];
+
+export default function LibraryScreen() {
+  const colorScheme = useColorScheme() ?? 'dark';
+  const colors = Colors[colorScheme];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SectionList
+        sections={LIBRARY_SECTIONS}
+        keyExtractor={(item) => item}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <Text style={[styles.title, { color: colors.text }]}>Library</Text>
+        }
+        renderSectionHeader={({ section }) => (
+          <Text style={[styles.sectionHeader, { color: colors.muted }]}>
+            {section.title.toUpperCase()}
+          </Text>
+        )}
+        renderItem={({ item }) => (
+          <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.rowText, { color: colors.text }]}>{item}</Text>
+            <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    marginTop: 24,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  rowText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  chevron: {
+    fontSize: 20,
   },
 });
