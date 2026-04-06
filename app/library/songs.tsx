@@ -19,6 +19,8 @@ export default function AllSongsScreen() {
   const [isLoadingTest, setIsLoadingTest] = useState(false);
 
   useEffect(() => {
+    // Already loaded in memory — no need to hit the DB again
+    if (useLibraryStore.getState().tracks.length > 0) return;
     loadFromDb().then(() => {
       if (useLibraryStore.getState().tracks.length === 0) {
         scanLibrary();

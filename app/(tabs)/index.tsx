@@ -6,8 +6,10 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLibraryStore } from '@/store/libraryStore';
 
-const LIBRARY_SECTIONS = [
-  { title: 'Songs', data: [{ label: 'All Songs', route: '/library/songs' as const }] },
+type LibraryItem = { label: string; route: string | null };
+
+const LIBRARY_SECTIONS: { title: string; data: LibraryItem[] }[] = [
+  { title: 'Songs', data: [{ label: 'All Songs', route: '/library/songs' }] },
   { title: 'Albums', data: [{ label: 'All Albums', route: null }] },
   { title: 'Artists', data: [{ label: 'All Artists', route: null }] },
   { title: 'Playlists', data: [{ label: 'All Playlists', route: null }] },
@@ -19,6 +21,8 @@ export default function LibraryScreen() {
   const { tracks, loadFromDb, scanLibrary } = useLibraryStore();
 
   useEffect(() => {
+    // Already loaded in memory — no need to hit the DB again
+    if (useLibraryStore.getState().tracks.length > 0) return;
     loadFromDb().then(() => {
       if (useLibraryStore.getState().tracks.length === 0) {
         scanLibrary();
@@ -48,7 +52,7 @@ export default function LibraryScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => item.route && router.push(item.route)}
+            onPress={() => item.route && router.push(item.route as any)}
             activeOpacity={item.route ? 0.7 : 1}
           >
             <Text style={[styles.rowText, { color: colors.text }]}>{item.label}</Text>
