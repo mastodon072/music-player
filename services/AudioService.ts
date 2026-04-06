@@ -36,7 +36,8 @@ class AudioService {
   };
 
   async load(uri: string) {
-    // Release previous player and subscription before creating a new one
+    // Pause first so the old audio stops making sound before we release it
+    this.player?.pause();
     this.subscription?.remove();
     this.player?.remove();
 
