@@ -49,6 +49,16 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
     repeatMode: 'off',
 
     play: async (track, queue) => {
+      const { currentTrack } = get();
+
+      // Same track already loaded — just ensure it's playing from the start
+      if (currentTrack?.id === track.id) {
+        await audioService.seekTo(0);
+        audioService.play();
+        set({ isPlaying: true, position: 0 });
+        return;
+      }
+
       const tracks = queue ?? [track];
       const index = tracks.findIndex((t) => t.id === track.id);
       await audioService.configure();

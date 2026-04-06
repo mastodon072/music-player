@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -31,10 +32,11 @@ export default function PlayerScreen() {
     cycleRepeat,
   } = usePlaybackStore();
 
-  if (!currentTrack) {
-    router.back();
-    return null;
-  }
+  useEffect(() => {
+    if (!currentTrack) router.back();
+  }, [currentTrack]);
+
+  if (!currentTrack) return null;
 
   const progress = duration > 0 ? position / duration : 0;
 

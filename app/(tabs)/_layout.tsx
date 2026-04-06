@@ -1,7 +1,7 @@
 import { BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import { MiniPlayer } from '@/components/player/MiniPlayer';
@@ -12,12 +12,21 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 function CustomTabBar(props: BottomTabBarProps) {
   return (
-    <View>
+    <View style={styles.tabBarWrapper}>
       <MiniPlayer />
       <BottomTabBar {...props} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBarWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+});
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -31,9 +40,7 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-          },
+          ios: { position: 'relative' },
           default: {},
         }),
       }}>
