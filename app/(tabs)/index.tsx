@@ -1,27 +1,44 @@
-import { SafeAreaView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
+import { SafeAreaView, SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useLibraryStore } from '@/store/libraryStore';
 
 const LIBRARY_SECTIONS = [
-  { title: 'Songs', data: ['All Songs'] },
-  { title: 'Albums', data: ['All Albums'] },
-  { title: 'Artists', data: ['All Artists'] },
-  { title: 'Playlists', data: ['All Playlists'] },
+  { title: 'Songs', data: [{ label: 'All Songs', route: '/library/songs' as const }] },
+  { title: 'Albums', data: [{ label: 'All Albums', route: null }] },
+  { title: 'Artists', data: [{ label: 'All Artists', route: null }] },
+  { title: 'Playlists', data: [{ label: 'All Playlists', route: null }] },
 ];
 
 export default function LibraryScreen() {
   const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
+  const { tracks, loadFromDb, scanLibrary } = useLibraryStore();
+
+  useEffect(() => {
+    loadFromDb().then(() => {
+      if (useLibraryStore.getState().tracks.length === 0) {
+        scanLibrary();
+      }
+    });
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <SectionList
         sections={LIBRARY_SECTIONS}
-        keyExtractor={(item) => item}
+        keyExtractor={(item) => item.label}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <Text style={[styles.title, { color: colors.text }]}>Library</Text>
+          <View style={styles.headerRow}>
+            <Text style={[styles.title, { color: colors.text }]}>Library</Text>
+            <Text style={[styles.trackCount, { color: colors.muted }]}>
+              {tracks.length > 0 ? `${tracks.length} songs` : ''}
+            </Text>
+          </View>
         }
         renderSectionHeader={({ section }) => (
           <Text style={[styles.sectionHeader, { color: colors.muted }]}>
@@ -29,10 +46,14 @@ export default function LibraryScreen() {
           </Text>
         )}
         renderItem={({ item }) => (
-          <View style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.rowText, { color: colors.text }]}>{item}</Text>
+          <TouchableOpacity
+            style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => item.route && router.push(item.route)}
+            activeOpacity={item.route ? 0.7 : 1}
+          >
+            <Text style={[styles.rowText, { color: colors.text }]}>{item.label}</Text>
             <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </SafeAreaView>
@@ -45,13 +66,21 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 180,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    paddingTop: 16,
-    paddingBottom: 16,
+  },
+  trackCount: {
+    fontSize: 14,
   },
   sectionHeader: {
     fontSize: 12,
