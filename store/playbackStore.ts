@@ -98,6 +98,7 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
         if (nextIndex >= queue.length) {
           if (repeatMode === 'all') nextIndex = 0;
           else {
+            audioService.pause();
             set({ isPlaying: false });
             return;
           }
