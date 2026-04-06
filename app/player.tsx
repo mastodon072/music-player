@@ -3,16 +3,12 @@ import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { ArtworkImage } from '@/components/player/ArtworkImage';
+import { ProgressBar } from '@/components/player/ProgressBar';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { usePlaybackStore } from '@/store/playbackStore';
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
 
 export default function PlayerScreen() {
   const colorScheme = useColorScheme() ?? 'dark';
@@ -26,6 +22,7 @@ export default function PlayerScreen() {
     resume,
     skipNext,
     skipPrev,
+    seekTo,
     shuffleEnabled,
     repeatMode,
     toggleShuffle,
@@ -38,8 +35,6 @@ export default function PlayerScreen() {
 
   if (!currentTrack) return null;
 
-  const progress = duration > 0 ? position / duration : 0;
-
   const repeatColor = repeatMode !== 'off' ? colors.tint : colors.muted;
 
   return (
@@ -50,7 +45,7 @@ export default function PlayerScreen() {
       </TouchableOpacity>
 
       {/* Artwork */}
-      <View style={[styles.artwork, { backgroundColor: colors.card, borderColor: colors.border }]} />
+      <ArtworkImage uri={currentTrack.artworkUri} borderRadius={16} />
 
       {/* Track info */}
       <View style={styles.info}>
@@ -62,20 +57,9 @@ export default function PlayerScreen() {
         </Text>
       </View>
 
-      {/* Progress */}
+      {/* Seekable progress bar */}
       <View style={styles.progressSection}>
-        <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.progressFill,
-              { backgroundColor: colors.tint, width: `${progress * 100}%` },
-            ]}
-          />
-        </View>
-        <View style={styles.timeRow}>
-          <Text style={[styles.time, { color: colors.muted }]}>{formatTime(position)}</Text>
-          <Text style={[styles.time, { color: colors.muted }]}>{formatTime(duration)}</Text>
-        </View>
+        <ProgressBar position={position} duration={duration} onSeek={seekTo} />
       </View>
 
       {/* Controls */}
@@ -133,15 +117,9 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
   },
-  artwork: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 32,
-  },
   info: {
-    marginBottom: 28,
+    marginTop: 28,
+    marginBottom: 24,
   },
   title: {
     fontSize: 22,
@@ -152,24 +130,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   progressSection: {
-    marginBottom: 36,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  time: {
-    fontSize: 12,
+    marginBottom: 28,
   },
   controls: {
     flexDirection: 'row',
