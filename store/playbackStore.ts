@@ -21,6 +21,7 @@ interface PlaybackStore {
   seekTo: (position: number) => Promise<void>;
   toggleShuffle: () => void;
   cycleRepeat: () => void;
+  jumpTo: (index: number) => Promise<void>;
   addToQueue: (track: Track) => void;
   removeFromQueue: (index: number) => void;
   reorderQueue: (from: number, to: number) => void;
@@ -138,6 +139,15 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
       set((s) => ({
         repeatMode: s.repeatMode === 'off' ? 'all' : s.repeatMode === 'all' ? 'one' : 'off',
       })),
+
+    jumpTo: async (index) => {
+      const { queue } = get();
+      const track = queue[index];
+      if (!track) return;
+      await audioService.load(track.uri);
+      audioService.play();
+      set({ currentTrack: track, isPlaying: true, queueIndex: index, position: 0, duration: 0 });
+    },
 
     addToQueue: (track) => set((s) => ({ queue: [...s.queue, track] })),
 

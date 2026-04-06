@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { ArtworkImage } from '@/components/player/ArtworkImage';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -9,9 +10,12 @@ import { usePlaybackStore } from '@/store/playbackStore';
 export function MiniPlayer() {
   const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
-  const { currentTrack, isPlaying, pause, resume, skipNext } = usePlaybackStore();
+  const { currentTrack, isPlaying, position, duration, pause, resume, skipNext } =
+    usePlaybackStore();
 
   if (!currentTrack) return null;
+
+  const progress = duration > 0 ? Math.min(position / duration, 1) : 0;
 
   const handlePlayPause = () => {
     if (isPlaying) pause();
@@ -24,8 +28,8 @@ export function MiniPlayer() {
       onPress={() => router.push('/player')}
       activeOpacity={0.92}
     >
-      {/* Artwork placeholder */}
-      <View style={[styles.artwork, { backgroundColor: colors.border }]} />
+      {/* Artwork */}
+      <ArtworkImage uri={currentTrack.artworkUri} size={40} borderRadius={8} />
 
       {/* Track info */}
       <View style={styles.info}>
@@ -50,6 +54,16 @@ export function MiniPlayer() {
       <TouchableOpacity onPress={skipNext} hitSlop={12} style={styles.button}>
         <IconSymbol name="forward.fill" size={22} color={colors.icon} />
       </TouchableOpacity>
+
+      {/* Progress line along the bottom edge */}
+      <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
+        <View
+          style={[
+            styles.progressFill,
+            { backgroundColor: colors.tint, width: `${progress * 100}%` },
+          ]}
+        />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -65,11 +79,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: 10,
-  },
-  artwork: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    overflow: 'hidden',
   },
   info: {
     flex: 1,
@@ -84,5 +94,15 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 4,
+  },
+  progressTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  progressFill: {
+    height: '100%',
   },
 });
