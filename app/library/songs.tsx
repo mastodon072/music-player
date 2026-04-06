@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { TrackListItem } from '@/components/library/TrackListItem';
@@ -7,6 +7,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useLibraryStore } from '@/store/libraryStore';
+import { loadTestTracks } from '@/store/testData';
 import { usePlaybackStore } from '@/store/playbackStore';
 import { Track } from '@/types/music';
 
@@ -15,10 +16,10 @@ export default function AllSongsScreen() {
   const colors = Colors[colorScheme];
   const { tracks, isScanning, loadFromDb, scanLibrary } = useLibraryStore();
   const { play, currentTrack } = usePlaybackStore();
+  const [isLoadingTest, setIsLoadingTest] = useState(false);
 
   useEffect(() => {
     loadFromDb().then(() => {
-      // If DB was empty, kick off a full scan
       if (useLibraryStore.getState().tracks.length === 0) {
         scanLibrary();
       }
@@ -29,12 +30,20 @@ export default function AllSongsScreen() {
     play(track, tracks);
   };
 
+  const handleLoadTestData = async () => {
+    setIsLoadingTest(true);
+    await loadTestTracks();
+    setIsLoadingTest(false);
+  };
+
+  const isEmpty = tracks.length === 0;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
-          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={22} color={colors.tint} />
+          <IconSymbol name="chevron.left" size={28} color={colors.tint} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>All Songs</Text>
         <TouchableOpacity onPress={scanLibrary} hitSlop={12} disabled={isScanning}>
@@ -42,17 +51,29 @@ export default function AllSongsScreen() {
         </TouchableOpacity>
       </View>
 
-      {isScanning && tracks.length === 0 ? (
+      {isScanning && isEmpty ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.tint} />
           <Text style={[styles.scanText, { color: colors.muted }]}>Scanning library…</Text>
         </View>
-      ) : tracks.length === 0 ? (
+      ) : isEmpty ? (
         <View style={styles.center}>
           <Text style={[styles.emptyText, { color: colors.muted }]}>No songs found</Text>
           <Text style={[styles.emptySubText, { color: colors.muted }]}>
             Tap the + button to scan your device
           </Text>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={[styles.testButton, { borderColor: colors.tint }]}
+              onPress={handleLoadTestData}
+              disabled={isLoadingTest}
+            >
+              {isLoadingTest
+                ? <ActivityIndicator size="small" color={colors.tint} />
+                : <Text style={[styles.testButtonText, { color: colors.tint }]}>Load test data</Text>
+              }
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -103,7 +124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
   },
   scanText: {
     marginTop: 12,
@@ -115,5 +136,18 @@ const styles = StyleSheet.create({
   },
   emptySubText: {
     fontSize: 14,
+  },
+  testButton: {
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
