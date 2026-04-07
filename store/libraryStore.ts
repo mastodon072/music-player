@@ -45,9 +45,16 @@ async function getDb() {
       album TEXT NOT NULL,
       duration REAL NOT NULL,
       artworkUri TEXT,
-      isFavourite INTEGER NOT NULL DEFAULT 0
+      isFavourite INTEGER NOT NULL DEFAULT 0,
+      lyrics TEXT
     );
   `);
+  // Safe migration for existing databases
+  try {
+    await db.execAsync(`ALTER TABLE tracks ADD COLUMN lyrics TEXT`);
+  } catch {
+    // Column already exists — ignore
+  }
   return db;
 }
 
@@ -81,6 +88,8 @@ interface LibraryStore {
 
   importTracks: () => Promise<{ imported: number; skipped: number }>;
   setArtwork: (trackId: string, artworkUri: string) => Promise<void>;
+  getLyrics: (trackId: string) => Promise<string>;
+  setLyrics: (trackId: string, lyrics: string) => Promise<void>;
 
   loadPlaylists: () => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist>;
@@ -255,6 +264,27 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
       tracks: s.tracks.map((t) =>
         t.id === trackId ? { ...t, artworkUri } : t,
       ),
+    }));
+  },
+
+  getLyrics: async (trackId) => {
+    try {
+      const db = await getDb();
+      const row = await db.getFirstAsync<{ lyrics: string | null }>(
+        'SELECT lyrics FROM tracks WHERE id = ?',
+        trackId,
+      );
+      return row?.lyrics ?? '';
+    } catch {
+      return '';
+    }
+  },
+
+  setLyrics: async (trackId, lyrics) => {
+    const db = await getDb();
+    await db.runAsync('UPDATE tracks SET lyrics = ? WHERE id = ?', lyrics, trackId);
+    set((s) => ({
+      tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, lyrics } : t)),
     }));
   },
 

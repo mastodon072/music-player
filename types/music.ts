@@ -7,6 +7,7 @@ export interface Track {
   duration: number; // seconds
   artworkUri?: string;
   isFavourite: boolean;
+  lyrics?: string;
 }
 
 export interface Album {
