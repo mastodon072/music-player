@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Animated,
   KeyboardAvoidingView,
@@ -43,23 +43,27 @@ export default function PlayerScreen() {
     updateCurrentTrackArtwork,
   } = usePlaybackStore();
   const { setArtwork, getLyrics, setLyrics } = useLibraryStore();
+  const insets = useSafeAreaInsets();
 
   const [showLyrics, setShowLyrics] = useState(false);
   const [lyrics, setLyricsState] = useState('');
   const [editingLyrics, setEditingLyrics] = useState(false);
   const [draftLyrics, setDraftLyrics] = useState('');
+  const editingTrackId = useRef<string | null>(null);
+  const editingTrackTitle = useRef<string | null>(null);
   const lyricsOpacity = useRef(new Animated.Value(0)).current;
 
-  // Load lyrics whenever the track changes
+  // Use id as dependency — currentTrack object reference changes on every render
+  const trackId = currentTrack?.id;
+
   useEffect(() => {
-    if (!currentTrack) return;
-    getLyrics(currentTrack.id).then((l) => {
+    if (!trackId) return;
+    getLyrics(trackId).then((l) => {
       setLyricsState(l);
-      // Reset overlay when track changes
       setShowLyrics(false);
       lyricsOpacity.setValue(0);
     });
-  }, [currentTrack, getLyrics, lyricsOpacity]);
+  }, [trackId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!currentTrack) router.back();
@@ -83,23 +87,27 @@ export default function PlayerScreen() {
   };
 
   const toggleLyrics = () => {
-    const toValue = showLyrics ? 0 : 1;
-    setShowLyrics(!showLyrics);
+    const next = !showLyrics;
+    setShowLyrics(next);
     Animated.timing(lyricsOpacity, {
-      toValue,
+      toValue: next ? 1 : 0,
       duration: 220,
       useNativeDriver: true,
     }).start();
   };
 
   const handleOpenEditor = () => {
+    editingTrackId.current = currentTrack.id;
+    editingTrackTitle.current = currentTrack.title;
     setDraftLyrics(lyrics);
     setEditingLyrics(true);
   };
 
   const handleSaveLyrics = async () => {
-    await setLyrics(currentTrack.id, draftLyrics);
-    setLyricsState(draftLyrics);
+    const id = editingTrackId.current ?? currentTrack.id;
+    await setLyrics(id, draftLyrics);
+    // Only update displayed lyrics if still on the same track
+    if (id === currentTrack.id) setLyricsState(draftLyrics);
     setEditingLyrics(false);
   };
 
@@ -115,64 +123,52 @@ export default function PlayerScreen() {
         <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
       </TouchableOpacity>
 
-      {/* Artwork + lyrics overlay */}
-      <TouchableOpacity
-        style={styles.artworkWrap}
-        onPress={toggleLyrics}
-        activeOpacity={1}
-      >
+      {/* Artwork */}
+      <View style={styles.artworkWrap}>
         <ArtworkImage uri={currentTrack.artworkUri} borderRadius={16} />
 
         {/* Artwork edit button — only visible when lyrics hidden */}
         {!showLyrics && (
           <TouchableOpacity
             style={[styles.artworkEditBtn, { backgroundColor: 'rgba(0,0,0,0.45)' }]}
-            onPress={(e) => { e.stopPropagation(); handlePickArtwork(); }}
+            onPress={handlePickArtwork}
             hitSlop={8}
           >
             <IconSymbol name="waveform" size={18} color="#fff" />
           </TouchableOpacity>
         )}
 
-        {/* Lyrics overlay */}
-        <Animated.View
-          style={[
-            styles.lyricsOverlay,
-            { opacity: lyricsOpacity, borderRadius: 16 },
-          ]}
-          pointerEvents={showLyrics ? 'box-none' : 'none'}
-        >
-          {/* Header row */}
-          <View style={styles.lyricsHeader}>
-            <Text style={styles.lyricsHeaderTitle}>Lyrics</Text>
-            <TouchableOpacity
-              onPress={(e) => { e.stopPropagation(); handleOpenEditor(); }}
-              hitSlop={8}
-            >
-              <IconSymbol name="plus.circle" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
+        {/* Lyrics overlay — plain View so ScrollView works */}
+        {showLyrics && (
+          <Animated.View
+            style={[styles.lyricsOverlay, { opacity: lyricsOpacity, borderRadius: 16 }]}
+          >
+            {/* Header */}
+            <View style={styles.lyricsHeader}>
+              <Text style={styles.lyricsHeaderTitle}>Lyrics</Text>
+              <TouchableOpacity onPress={handleOpenEditor} hitSlop={8}>
+                <IconSymbol name="plus.circle" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
 
-          {lyrics.trim() ? (
-            <ScrollView
-              style={styles.lyricsScroll}
-              contentContainerStyle={styles.lyricsContent}
-              showsVerticalScrollIndicator={false}
-              onStartShouldSetResponder={() => true}
-            >
-              <Text style={styles.lyricsText}>{lyrics}</Text>
-            </ScrollView>
-          ) : (
-            <TouchableOpacity
-              style={styles.lyricsEmpty}
-              onPress={(e) => { e.stopPropagation(); handleOpenEditor(); }}
-            >
-              <IconSymbol name="music.note" size={28} color="rgba(255,255,255,0.5)" />
-              <Text style={styles.lyricsEmptyText}>Tap to add lyrics</Text>
-            </TouchableOpacity>
-          )}
-        </Animated.View>
-      </TouchableOpacity>
+            {lyrics.trim() ? (
+              <ScrollView
+                style={styles.lyricsScroll}
+                contentContainerStyle={styles.lyricsContent}
+                showsVerticalScrollIndicator={false}
+                bounces
+              >
+                <Text style={styles.lyricsText}>{lyrics}</Text>
+              </ScrollView>
+            ) : (
+              <TouchableOpacity style={styles.lyricsEmpty} onPress={handleOpenEditor}>
+                <IconSymbol name="music.note" size={28} color="rgba(255,255,255,0.5)" />
+                <Text style={styles.lyricsEmptyText}>Tap to add lyrics</Text>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+        )}
+      </View>
 
       {/* Track info */}
       <View style={styles.info}>
@@ -182,6 +178,20 @@ export default function PlayerScreen() {
         <Text style={[styles.artist, { color: colors.muted }]} numberOfLines={1}>
           {currentTrack.artist}
         </Text>
+        {/* Lyrics toggle pill */}
+        <TouchableOpacity
+          style={[
+            styles.lyricsPill,
+            { backgroundColor: showLyrics ? colors.tint : colors.card, borderColor: colors.border },
+          ]}
+          onPress={toggleLyrics}
+          hitSlop={8}
+        >
+          <IconSymbol name="music.note.list" size={13} color={showLyrics ? '#fff' : colors.muted} />
+          <Text style={[styles.lyricsPillText, { color: showLyrics ? '#fff' : colors.muted }]}>
+            Lyrics
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Seekable progress bar */}
@@ -236,32 +246,29 @@ export default function PlayerScreen() {
           style={{ flex: 1, backgroundColor: colors.background }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <SafeAreaView style={{ flex: 1 }}>
-            {/* Editor header */}
-            <View style={[styles.editorHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={handleDiscardLyrics} hitSlop={12}>
-                <Text style={[styles.editorCancel, { color: colors.muted }]}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={[styles.editorTitle, { color: colors.text }]} numberOfLines={1}>
-                {currentTrack.title}
-              </Text>
-              <TouchableOpacity onPress={handleSaveLyrics} hitSlop={12}>
-                <Text style={[styles.editorSave, { color: colors.tint }]}>Save</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.editorHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 8 }]}>
+            <TouchableOpacity onPress={handleDiscardLyrics} hitSlop={12}>
+              <Text style={[styles.editorCancel, { color: colors.muted }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.editorTitle, { color: colors.text }]} numberOfLines={1}>
+              {editingTrackTitle.current ?? currentTrack.title}
+            </Text>
+            <TouchableOpacity onPress={handleSaveLyrics} hitSlop={12}>
+              <Text style={[styles.editorSave, { color: colors.tint }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
 
-            <TextInput
-              style={[styles.editorInput, { color: colors.text }]}
-              value={draftLyrics}
-              onChangeText={setDraftLyrics}
-              multiline
-              autoFocus
-              placeholder="Paste or type lyrics here…"
-              placeholderTextColor={colors.muted}
-              textAlignVertical="top"
-              scrollEnabled
-            />
-          </SafeAreaView>
+          <TextInput
+            style={[styles.editorInput, { color: colors.text }]}
+            value={draftLyrics}
+            onChangeText={setDraftLyrics}
+            multiline
+            autoFocus
+            placeholder="Paste or type lyrics here…"
+            placeholderTextColor={colors.muted}
+            textAlignVertical="top"
+            scrollEnabled
+          />
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -298,9 +305,13 @@ const styles = StyleSheet.create({
   },
   lyricsOverlay: {
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.72)',
     padding: 16,
+    borderRadius: 16,
   },
   lyricsHeader: {
     flexDirection: 'row',
@@ -346,6 +357,21 @@ const styles = StyleSheet.create({
   },
   artist: {
     fontSize: 16,
+  },
+  lyricsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  lyricsPillText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   progressSection: {
     marginBottom: 28,

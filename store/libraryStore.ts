@@ -34,7 +34,10 @@ const IMPORTS_DIR = FileSystem.documentDirectory + 'imported_audio/';
 const DB_NAME = 'music.db';
 const PLAYLISTS_KEY = 'playlists';
 
+let _db: SQLite.SQLiteDatabase | null = null;
+
 async function getDb() {
+  if (_db) return _db;
   const db = await SQLite.openDatabaseAsync(DB_NAME);
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS tracks (
@@ -55,6 +58,7 @@ async function getDb() {
   } catch {
     // Column already exists — ignore
   }
+  _db = db;
   return db;
 }
 
@@ -268,6 +272,12 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   },
 
   getLyrics: async (trackId) => {
+    // Check in-memory first — always up to date after setLyrics
+    const inMemory = get().tracks.find((t) => t.id === trackId);
+    if (inMemory && inMemory.lyrics !== undefined && inMemory.lyrics !== null) {
+      return inMemory.lyrics;
+    }
+    // Fall back to SQLite (e.g. first load before tracks are in memory)
     try {
       const db = await getDb();
       const row = await db.getFirstAsync<{ lyrics: string | null }>(
