@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { ArtworkImage } from '@/components/player/ArtworkImage';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -23,10 +24,13 @@ export function TrackListItem({ track, isPlaying, onPress }: Props) {
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      {/* Artwork placeholder */}
-      <View style={[styles.artwork, { backgroundColor: colors.border }]}>
+      {/* Artwork */}
+      <View style={styles.artworkWrap}>
+        <ArtworkImage uri={track.artworkUri} size={46} borderRadius={8} />
         {isPlaying && (
-          <IconSymbol name="play.fill" size={14} color={colors.tint} />
+          <View style={[styles.playingOverlay, { backgroundColor: 'rgba(0,0,0,0.45)' }]}>
+            <IconSymbol name="waveform" size={14} color="#fff" />
+          </View>
         )}
       </View>
 
@@ -58,13 +62,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 12,
   },
-  artwork: {
-    width: 46,
-    height: 46,
+  artworkWrap: {
+    position: 'relative',
+    flexShrink: 0,
+  },
+  playingOverlay: {
+    position: 'absolute',
+    inset: 0,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
   info: {
     flex: 1,

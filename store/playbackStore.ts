@@ -26,6 +26,8 @@ interface PlaybackStore {
   removeFromQueue: (index: number) => void;
   reorderQueue: (from: number, to: number) => void;
 
+  updateCurrentTrackArtwork: (artworkUri: string) => void;
+
   // Internal callbacks — not for external use
   _setPosition: (position: number, duration: number) => void;
   _handleFinish: () => Promise<void>;
@@ -170,6 +172,11 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
         queue.splice(to, 0, moved);
         return { queue };
       }),
+
+    updateCurrentTrackArtwork: (artworkUri) =>
+      set((s) =>
+        s.currentTrack ? { currentTrack: { ...s.currentTrack, artworkUri } } : {},
+      ),
 
     _setPosition: (position, duration) => set({ position, duration }),
 

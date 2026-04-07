@@ -1,11 +1,33 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import { createAudioPlayer } from 'expo-audio';
 import AsyncStorage from 'expo-sqlite/kv-store';
 import * as SQLite from 'expo-sqlite';
 import { create } from 'zustand';
 
 import { Playlist, Track } from '@/types/music';
+
+/** Load a file URI briefly to read its duration, then clean up. */
+async function getAudioDuration(uri: string): Promise<number> {
+  return new Promise((resolve) => {
+    const player = createAudioPlayer({ uri });
+    const timeout = setTimeout(() => {
+      sub.remove();
+      player.remove();
+      resolve(0);
+    }, 8000);
+
+    const sub = player.addListener('playbackStatusUpdate', (status) => {
+      if (status.isLoaded && status.duration > 0) {
+        clearTimeout(timeout);
+        sub.remove();
+        player.remove();
+        resolve(status.duration);
+      }
+    });
+  });
+}
 
 const IMPORTS_DIR = FileSystem.documentDirectory + 'imported_audio/';
 
@@ -58,6 +80,7 @@ interface LibraryStore {
   toggleFavourite: (trackId: string) => Promise<void>;
 
   importTracks: () => Promise<{ imported: number; skipped: number }>;
+  setArtwork: (trackId: string, artworkUri: string) => Promise<void>;
 
   loadPlaylists: () => Promise<void>;
   createPlaylist: (name: string) => Promise<Playlist>;
@@ -194,13 +217,15 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
         // File may already exist — use the existing copy
       }
 
+      const duration = await getAudioDuration(destUri);
+
       const track: Track = {
         id: 'import_' + Date.now() + '_' + imported,
         uri: destUri,
         title: titleFromFilename,
         artist: 'Unknown Artist',
         album: 'Imported',
-        duration: asset.size ? 0 : 0, // duration not available from picker
+        duration,
         artworkUri: undefined,
         isFavourite: false,
       };
@@ -221,6 +246,16 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     }
 
     return { imported, skipped };
+  },
+
+  setArtwork: async (trackId, artworkUri) => {
+    const db = await getDb();
+    await db.runAsync('UPDATE tracks SET artworkUri = ? WHERE id = ?', artworkUri, trackId);
+    set((s) => ({
+      tracks: s.tracks.map((t) =>
+        t.id === trackId ? { ...t, artworkUri } : t,
+      ),
+    }));
   },
 
   loadPlaylists: async () => {

@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import { ProgressBar } from '@/components/player/ProgressBar';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useLibraryStore } from '@/store/libraryStore';
 import { usePlaybackStore } from '@/store/playbackStore';
 
 export default function PlayerScreen() {
@@ -27,7 +29,9 @@ export default function PlayerScreen() {
     repeatMode,
     toggleShuffle,
     cycleRepeat,
+    updateCurrentTrackArtwork,
   } = usePlaybackStore();
+  const { setArtwork } = useLibraryStore();
 
   useEffect(() => {
     if (!currentTrack) router.back();
@@ -37,6 +41,19 @@ export default function PlayerScreen() {
 
   const repeatColor = repeatMode !== 'off' ? colors.tint : colors.muted;
 
+  const handlePickArtwork = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const uri = result.assets[0].uri;
+    await setArtwork(currentTrack.id, uri);
+    updateCurrentTrackArtwork(uri);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Dismiss handle */}
@@ -44,8 +61,17 @@ export default function PlayerScreen() {
         <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
       </TouchableOpacity>
 
-      {/* Artwork */}
-      <ArtworkImage uri={currentTrack.artworkUri} borderRadius={16} />
+      {/* Artwork with edit overlay */}
+      <View style={styles.artworkWrap}>
+        <ArtworkImage uri={currentTrack.artworkUri} borderRadius={16} />
+        <TouchableOpacity
+          style={[styles.artworkEditBtn, { backgroundColor: 'rgba(0,0,0,0.45)' }]}
+          onPress={handlePickArtwork}
+          hitSlop={8}
+        >
+          <IconSymbol name="waveform" size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       {/* Track info */}
       <View style={styles.info}>
@@ -116,6 +142,19 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
+  },
+  artworkWrap: {
+    position: 'relative',
+  },
+  artworkEditBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     marginTop: 28,

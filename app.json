@@ -40,6 +40,12 @@
         }
       ],
       "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow music player to set album artwork from your photo library."
+        }
+      ],
       "expo-sqlite",
       [
         "expo-media-library",
