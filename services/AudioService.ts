@@ -19,6 +19,12 @@ class AudioService {
     });
   }
 
+  // Called once at store initialisation so background mode is active
+  // before the first track is ever played.
+  init() {
+    this.configure().catch(() => {});
+  }
+
   setOnPlaybackUpdate(cb: PlaybackUpdateCallback) {
     this.onPlaybackUpdateCallback = cb;
   }

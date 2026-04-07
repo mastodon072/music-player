@@ -32,6 +32,9 @@ interface PlaybackStore {
 }
 
 export const usePlaybackStore = create<PlaybackStore>((set, get) => {
+  // Configure audio session immediately so background playback is ready
+  audioService.init();
+
   audioService.setOnPlaybackUpdate((position, duration) => {
     get()._setPosition(position, duration);
   });
