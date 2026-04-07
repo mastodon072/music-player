@@ -33,6 +33,15 @@ const MAPPING = {
   'ellipsis': 'more-horiz',
   'plus': 'add',
   'xmark': 'close',
+  'trash': 'delete',
+  'checkmark': 'check',
+  'checkmark.circle.fill': 'check-circle',
+  'circle': 'radio-button-unchecked',
+  'person.2.fill': 'group',
+  'music.note': 'music-note',
+  'folder.fill': 'folder',
+  'waveform': 'graphic-eq',
+  'plus.circle': 'add-circle-outline',
 } as IconMapping;
 
 /**

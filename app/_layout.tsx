@@ -50,6 +50,12 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="player" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="library/songs" options={{ headerShown: false }} />
+        <Stack.Screen name="library/albums" options={{ headerShown: false }} />
+        <Stack.Screen name="library/album/[name]" options={{ headerShown: false }} />
+        <Stack.Screen name="library/artists" options={{ headerShown: false }} />
+        <Stack.Screen name="library/artist/[name]" options={{ headerShown: false }} />
+        <Stack.Screen name="library/playlists" options={{ headerShown: false }} />
+        <Stack.Screen name="library/playlist/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <MiniPlayerOverlay />

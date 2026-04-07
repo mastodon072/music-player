@@ -10,9 +10,9 @@ type LibraryItem = { label: string; route: string | null };
 
 const LIBRARY_SECTIONS: { title: string; data: LibraryItem[] }[] = [
   { title: 'Songs', data: [{ label: 'All Songs', route: '/library/songs' }] },
-  { title: 'Albums', data: [{ label: 'All Albums', route: null }] },
-  { title: 'Artists', data: [{ label: 'All Artists', route: null }] },
-  { title: 'Playlists', data: [{ label: 'All Playlists', route: null }] },
+  { title: 'Albums', data: [{ label: 'All Albums', route: '/library/albums' }] },
+  { title: 'Artists', data: [{ label: 'All Artists', route: '/library/artists' }] },
+  { title: 'Playlists', data: [{ label: 'All Playlists', route: '/library/playlists' }] },
 ];
 
 export default function LibraryScreen() {

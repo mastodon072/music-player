@@ -27,4 +27,5 @@ export interface Playlist {
   id: string;
   name: string;
   createdAt: number;
+  trackIds: string[];
 }

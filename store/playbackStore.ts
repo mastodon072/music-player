@@ -81,6 +81,11 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
     },
 
     resume: async () => {
+      const { position, duration } = get();
+      if (duration > 0 && position >= duration - 0.1) {
+        await audioService.seekTo(0);
+        set({ position: 0 });
+      }
       audioService.play();
       set({ isPlaying: true });
     },
@@ -100,7 +105,8 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
           if (repeatMode === 'all') nextIndex = 0;
           else {
             audioService.pause();
-            set({ isPlaying: false });
+            await audioService.seekTo(0);
+            set({ isPlaying: false, position: 0 });
             return;
           }
         }

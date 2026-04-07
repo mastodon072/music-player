@@ -22,7 +22,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = musicplayer/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = musicplayer/Info.plist; sourceTree = "<group>"; };
 		2A7774E246EBE396D92E3B4F /* Pods-musicplayer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-musicplayer.debug.xcconfig"; path = "Target Support Files/Pods-musicplayer/Pods-musicplayer.debug.xcconfig"; sourceTree = "<group>"; };
-		312B1D0748DC0ECB6661FDE1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = musicplayer/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		312B1D0748DC0ECB6661FDE1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = musicplayer/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		380FC1916DB99C29C349F70D /* Pods-musicplayer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-musicplayer.release.xcconfig"; path = "Target Support Files/Pods-musicplayer/Pods-musicplayer.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = musicplayer/SplashScreen.storyboard; sourceTree = "<group>"; };
 		B7669C2C54C14FBCD79DB176 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-musicplayer/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
@@ -119,7 +119,6 @@
 				2A7774E246EBE396D92E3B4F /* Pods-musicplayer.debug.xcconfig */,
 				380FC1916DB99C29C349F70D /* Pods-musicplayer.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -342,6 +341,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = musicplayer/musicplayer.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WU22P7U6F4;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -378,6 +378,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = musicplayer/musicplayer.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WU22P7U6F4;
 				INFOPLIST_FILE = musicplayer/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -1,10 +1,16 @@
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
+import AsyncStorage from 'expo-sqlite/kv-store';
 import * as SQLite from 'expo-sqlite';
 import { create } from 'zustand';
 
-import { Track } from '@/types/music';
+import { Playlist, Track } from '@/types/music';
+
+const IMPORTS_DIR = FileSystem.documentDirectory + 'imported_audio/';
 
 const DB_NAME = 'music.db';
+const PLAYLISTS_KEY = 'playlists';
 
 async function getDb() {
   const db = await SQLite.openDatabaseAsync(DB_NAME);
@@ -36,21 +42,35 @@ function assetToTrack(asset: MediaLibrary.Asset): Track {
   };
 }
 
+async function persistPlaylists(playlists: Playlist[]) {
+  await AsyncStorage.setItemAsync(PLAYLISTS_KEY, JSON.stringify(playlists));
+}
+
 interface LibraryStore {
   tracks: Track[];
   isScanning: boolean;
   permissionStatus: MediaLibrary.PermissionStatus | null;
+  playlists: Playlist[];
 
   requestPermission: () => Promise<boolean>;
   scanLibrary: () => Promise<void>;
   loadFromDb: () => Promise<void>;
   toggleFavourite: (trackId: string) => Promise<void>;
+
+  importTracks: () => Promise<{ imported: number; skipped: number }>;
+
+  loadPlaylists: () => Promise<void>;
+  createPlaylist: (name: string) => Promise<Playlist>;
+  deletePlaylist: (id: string) => Promise<void>;
+  addTrackToPlaylist: (playlistId: string, trackId: string) => Promise<void>;
+  removeTrackFromPlaylist: (playlistId: string, trackId: string) => Promise<void>;
 }
 
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
   tracks: [],
   isScanning: false,
   permissionStatus: null,
+  playlists: [],
 
   requestPermission: async () => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -127,5 +147,128 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
         t.id === trackId ? { ...t, isFavourite: !t.isFavourite } : t,
       ),
     }));
+  },
+
+  importTracks: async () => {
+    // Pick audio files
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'audio/*',
+      multiple: true,
+      copyToCacheDirectory: false,
+    });
+
+    if (result.canceled || result.assets.length === 0) {
+      return { imported: 0, skipped: 0 };
+    }
+
+    // Ensure imports directory exists
+    const dirInfo = await FileSystem.getInfoAsync(IMPORTS_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(IMPORTS_DIR, { intermediates: true });
+    }
+
+    const db = await getDb();
+    const existing = get().tracks;
+    const existingNames = new Set(existing.map((t) => t.title));
+
+    let imported = 0;
+    let skipped = 0;
+    const newTracks: Track[] = [];
+
+    for (const asset of result.assets) {
+      const filename = asset.name;
+      const titleFromFilename = filename.replace(/\.[^/.]+$/, '');
+
+      // Skip if already imported (by title match)
+      if (existingNames.has(titleFromFilename)) {
+        skipped++;
+        continue;
+      }
+
+      const destUri = IMPORTS_DIR + filename;
+
+      // Copy file into app's document directory for persistent access
+      try {
+        await FileSystem.copyAsync({ from: asset.uri, to: destUri });
+      } catch {
+        // File may already exist — use the existing copy
+      }
+
+      const track: Track = {
+        id: 'import_' + Date.now() + '_' + imported,
+        uri: destUri,
+        title: titleFromFilename,
+        artist: 'Unknown Artist',
+        album: 'Imported',
+        duration: asset.size ? 0 : 0, // duration not available from picker
+        artworkUri: undefined,
+        isFavourite: false,
+      };
+
+      await db.runAsync(
+        `INSERT OR IGNORE INTO tracks (id, uri, title, artist, album, duration, artworkUri, isFavourite)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+        track.id, track.uri, track.title, track.artist, track.album,
+        track.duration, track.artworkUri ?? null,
+      );
+
+      newTracks.push(track);
+      imported++;
+    }
+
+    if (newTracks.length > 0) {
+      set((s) => ({ tracks: [...s.tracks, ...newTracks] }));
+    }
+
+    return { imported, skipped };
+  },
+
+  loadPlaylists: async () => {
+    try {
+      const raw = await AsyncStorage.getItemAsync(PLAYLISTS_KEY);
+      const playlists: Playlist[] = raw ? JSON.parse(raw) : [];
+      set({ playlists });
+    } catch {
+      set({ playlists: [] });
+    }
+  },
+
+  createPlaylist: async (name) => {
+    const playlist: Playlist = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      createdAt: Date.now(),
+      trackIds: [],
+    };
+    const playlists = [...get().playlists, playlist];
+    await persistPlaylists(playlists);
+    set({ playlists });
+    return playlist;
+  },
+
+  deletePlaylist: async (id) => {
+    const playlists = get().playlists.filter((p) => p.id !== id);
+    await persistPlaylists(playlists);
+    set({ playlists });
+  },
+
+  addTrackToPlaylist: async (playlistId, trackId) => {
+    const playlists = get().playlists.map((p) =>
+      p.id === playlistId && !p.trackIds.includes(trackId)
+        ? { ...p, trackIds: [...p.trackIds, trackId] }
+        : p,
+    );
+    await persistPlaylists(playlists);
+    set({ playlists });
+  },
+
+  removeTrackFromPlaylist: async (playlistId, trackId) => {
+    const playlists = get().playlists.map((p) =>
+      p.id === playlistId
+        ? { ...p, trackIds: p.trackIds.filter((tid) => tid !== trackId) }
+        : p,
+    );
+    await persistPlaylists(playlists);
+    set({ playlists });
   },
 }));
